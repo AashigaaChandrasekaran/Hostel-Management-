@@ -1,0 +1,203 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Student {
+    int rollNumber;
+    char name[50];
+    char address[100];
+    int roomNumber;
+};
+
+void addStudent(FILE *file);
+void displayStudents(FILE *file);
+void searchStudent(FILE *file);
+void updateStudent(FILE *file);
+void deleteStudent(FILE *file);
+
+int main() {
+    FILE *file = fopen("students.dat", "ab+");
+
+    if (file == NULL) {
+        
+        printf("Error opening the file.\n");
+        return 1;
+    }
+
+    int choice;
+
+    do {
+        
+        printf("\nHostel Management System\n");
+        printf("1. Add Student\n");
+        printf("2. Display Students\n");
+        printf("3. Search Student\n");
+        printf("4. Update Student\n");
+        printf("5. Delete Student\n");
+        printf("6. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            
+            case 1:
+                addStudent(file);
+                break;
+            case 2:
+                displayStudents(file);
+                break;
+            case 3:
+                searchStudent(file);
+                break;
+            case 4:
+                updateStudent(file);
+                break;
+            case 5:
+                deleteStudent(file);
+                break;
+            case 6:
+                printf("Exiting the program.\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+                
+        }
+        
+    } while (choice != 6);
+
+    fclose(file);
+    return 0;
+    
+}
+
+void addStudent(FILE *file) {
+    
+    struct Student student;
+
+    printf("Enter Roll Number: ");
+    scanf("%d", &student.rollNumber);
+    printf("Enter Name: ");
+    scanf("%s", student.name);
+    printf("Enter Address: ");
+    scanf("%s", student.address);
+    printf("Enter Room Number: ");
+    scanf("%d", &student.roomNumber);
+
+    fwrite(&student, sizeof(struct Student), 1, file);
+
+    printf("Student added successfully.\n");
+    
+}
+
+void displayStudents(FILE *file) {
+    
+    struct Student student;
+
+    fseek(file, 0, SEEK_SET);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        
+        printf("Roll Number: %d, Name: %s, Address: %s, Room Number: %d\n",
+               student.rollNumber, student.name, student.address, student.roomNumber);
+               
+    }
+}
+
+void searchStudent(FILE *file) {
+    
+    int rollNumber;
+    printf("Enter Roll Number to search: ");
+    scanf("%d", &rollNumber);
+
+    struct Student student;
+    int found = 0;
+
+    fseek(file, 0, SEEK_SET);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        
+        if (student.rollNumber == rollNumber) {
+            
+            printf("Student found:\n");
+            printf("Roll Number: %d, Name: %s, Address: %s, Room Number: %d\n",
+                   student.rollNumber, student.name, student.address, student.roomNumber);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        
+        printf("Student not found.\n");
+    }
+}
+
+void updateStudent(FILE *file) {
+    
+    int rollNumber;
+    printf("Enter Roll Number to update: ");
+    scanf("%d", &rollNumber);
+
+    struct Student student;
+    int found = 0;
+
+    fseek(file, 0, SEEK_SET);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        
+        if (student.rollNumber == rollNumber) {
+            
+            printf("Enter new Name: ");
+            scanf("%s", student.name);
+            printf("Enter new Address: ");
+            scanf("%s", student.address);
+            printf("Enter new Room Number: ");
+            scanf("%d", &student.roomNumber);
+
+            fseek(file, -sizeof(struct Student), SEEK_CUR);
+
+            fwrite(&student, sizeof(struct Student), 1, file);
+
+            printf("Student updated successfully.\n");
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Student not found.\n");
+    }
+}
+
+void deleteStudent(FILE *file) {
+    int rollNumber;
+    printf("Enter Roll Number to delete: ");
+    scanf("%d", &rollNumber);
+
+    struct Student student, temp;
+
+    FILE *tempFile = fopen("temp.dat", "wb");
+
+    if (tempFile == NULL) {
+        printf("Error creating temporary file.\n");
+        return;
+    }
+
+    fseek(file, 0, SEEK_SET);
+    while (fread(&student, sizeof(struct Student), 1, file) == 1) {
+        
+        if (student.rollNumber == rollNumber) {
+            
+            printf("Student deleted successfully.\n");
+            
+        } else {
+    
+            fwrite(&student, sizeof(struct Student), 1, tempFile);
+            
+        }
+        
+    }
+
+    fclose(file);
+    fclose(tempFile);
+    remove("students.dat");
+    rename("temp.dat", "students.dat");
+    
+}
